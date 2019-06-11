@@ -7,6 +7,10 @@ LABEL maintainer="Johan Andersson <Grokzen@gmail.com>"
 ENV HOME /root
 ENV DEBIAN_FRONTEND noninteractive
 
+RUN echo "deb http://mirrors.163.com/debian stretch main" > /etc/apt/sources.list && \
+        echo "deb http://mirrors.163.com/debian-security stretch/updates main" >> /etc/apt/sources.list && \
+        echo "deb http://mirrors.163.com/debian stretch-updates main" >> /etc/apt/sources.list
+
 # Install system dependencies
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -yqq \

@@ -3,6 +3,7 @@
 if [ "$1" = 'redis-cluster' ]; then
     # Allow passing in cluster IP by argument or environmental variable
     IP="${2:-$IP}"
+    PASSWD=${3:-$PASSWD}
 
     max_port=7005
     if [ "$STANDALONE" = "true" ]; then
@@ -27,6 +28,10 @@ if [ "$1" = 'redis-cluster' ]; then
 
       if [ "$port" -lt "7006" ]; then
         PORT=${port} envsubst < /redis-conf/redis-cluster.tmpl > /redis-conf/${port}/redis.conf
+        if [ -n "$PASSWD" ]; then
+          echo "requirepass $PASSWD" >> /redis-conf/${port}/redis.conf
+          echo "masterauth $PASSWD" >> /redis-conf/${port}/redis.conf
+        fi
       else
         PORT=${port} envsubst < /redis-conf/redis.tmpl > /redis-conf/${port}/redis.conf
       fi
@@ -58,7 +63,11 @@ if [ "$1" = 'redis-cluster' ]; then
       echo "yes" | ruby /redis/src/redis-trib.rb create --replicas 1 ${IP}:7000 ${IP}:7001 ${IP}:7002 ${IP}:7003 ${IP}:7004 ${IP}:7005
     else
       echo "Using redis-cli to create the cluster"
-      echo "yes" | /redis/src/redis-cli --cluster create --cluster-replicas 1 ${IP}:7000 ${IP}:7001 ${IP}:7002 ${IP}:7003 ${IP}:7004 ${IP}:7005
+      if [ -n "$PASSWD" ]; then
+        echo "yes" | /redis/src/redis-cli --cluster create --cluster-replicas 1 ${IP}:7000 ${IP}:7001 ${IP}:7002 ${IP}:7003 ${IP}:7004 ${IP}:7005 -a $PASSWD
+      else
+        echo "yes" | /redis/src/redis-cli --cluster create --cluster-replicas 1 ${IP}:7000 ${IP}:7001 ${IP}:7002 ${IP}:7003 ${IP}:7004 ${IP}:7005
+      fi
     fi
 
     if [ "$SENTINEL" = "true" ]; then
